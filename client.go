@@ -1,57 +1,70 @@
 package main
 
 import (
-	"./codec"
 	"bufio"
 	"fmt"
 	"net"
-	"time"
+	"strings"
 )
 
-var quitSemaphore chan bool
-
-func main() {
-	for i := 0; i < 5000; i++ {
-		go openConn()
-	}
-	// b := []byte("time\n")
-	// conn.Write(b)
-	var msg string
-	fmt.Scanln(&msg)
-	<-quitSemaphore
+type client struct {
+	conn     net.Conn
+	nick     string
+	room     *room
+	commands chan<- command
 }
 
-func openConn() {
-	var tcpAddr *net.TCPAddr
-	tcpAddr, _ = net.ResolveTCPAddr("tcp", "127.0.0.1:9999")
-
-	conn, _ := net.DialTCP("tcp", nil, tcpAddr)
-	defer conn.Close()
-	fmt.Println("connected!")
-
-	go onMessageRecived(conn)
-	go sendMessage(conn)
-	<-quitSemaphore
-}
-
-func sendMessage(conn *net.TCPConn) {
+func (c *client) readInput() {
 	for {
-		time.Sleep(1 * time.Second)
-		// var msg string
-		// fmt.Scanln(&msg)
-		b, _ := codec.Encode(string(time.Now().Year()))
-		conn.Write(b)
-	}
-}
-
-func onMessageRecived(conn *net.TCPConn) {
-	reader := bufio.NewReader(conn)
-	for {
-		msg, err := codec.Decode(reader)
-		fmt.Println(msg)
+		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		if err != nil {
-			quitSemaphore <- true
-			break
+			return
+		}
+
+		msg = strings.Trim(msg, "\r\n")
+
+		args := strings.Split(msg, " ")
+		cmd := strings.TrimSpace(args[0])
+
+		switch cmd {
+		case "/nick":
+			c.commands <- command{
+				id:     CmdNick,
+				client: c,
+				args:   args,
+			}
+		case "/join":
+			c.commands <- command{
+				id:     CmdJoin,
+				client: c,
+				args:   args,
+			}
+		case "/rooms":
+			c.commands <- command{
+				id:     CmdRooms,
+				client: c,
+			}
+		case "/msg":
+			c.commands <- command{
+				id:     CmdMsg,
+				client: c,
+				args:   args,
+			}
+		case "/quit":
+			c.commands <- command{
+				id:     CmdQuit,
+				client: c,
+			}
+		default:
+			c.err(fmt.Errorf("try again,unknown command: %s", cmd))
 		}
 	}
+}
+
+func (c *client) err(err error) {
+	c.conn.Write([]byte("err: " + err.Error() + "\n"))
+}
+
+func (c *client) msg(msg string) {
+	c.conn.Write([]byte("> " + msg + "\n"))
 }
