@@ -43,7 +43,6 @@ func ReplyFromServer(rAddr net.Addr, conn *net.TCPConn) {
 	var buf [512]byte
 	n, err := conn.Read(buf[0:])
 	checkError(err)
-	//replyString := string(buf[0:18]) + string(buf[19:n])
 	fmt.Println("Reply:", string(buf[0:n]))
 }
 

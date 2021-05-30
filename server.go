@@ -32,6 +32,8 @@ func (s *server) run() {
 			s.msg(cmd.client, cmd.args)
 		case CmdQuit:
 			s.quit(cmd.client)
+		case CmdMember:
+			s.listMember(cmd.client)
 		}
 	}
 }
@@ -68,15 +70,15 @@ func (s *server) join(c *client, args []string) {
 		return
 	}
 
-	roomName := args[1]
+	roomName := args[1] //room 的名字
 
-	r, ok := s.rooms[roomName]
-	if !ok {
+	r, ok := s.rooms[roomName] //如果存在就可以直接加入
+	if !ok {                   //如果不存在就自己创建一个
 		r = &room{
 			name:    roomName,
-			members: make(map[net.Addr]*client),
+			members: make(map[net.Addr]*client), //ip地址对应每个用户
 		}
-		s.rooms[roomName] = r
+		s.rooms[roomName] = r // 创建新房间完成
 	}
 	r.members[c.conn.RemoteAddr()] = c
 
@@ -85,7 +87,7 @@ func (s *server) join(c *client, args []string) {
 
 	r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
 
-	c.msg(fmt.Sprintf("welcome to %s＊┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄＊", roomName))
+	c.msg(fmt.Sprintf("welcome to %s :),enjoy your trip here", roomName))
 }
 
 func (s *server) listRooms(c *client) {
@@ -96,7 +98,23 @@ func (s *server) listRooms(c *client) {
 
 	c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ",\n")))
 }
+func (s *server) listMember(c *client) {
+	if c.nick == "anonymous" {
+		c.msg("your name is `anonymous` plz change you nick name. usage: /nick NICK_NAME  (•◡•) /")
+	}
+	if c.room == nil {
+		s.listRooms(c)
+		c.msg("please choose one of these rooms, or create a room on your own. usage：/join ROOM_NAME （っ＾▿＾）")
+		return
+	}
+	var memberList []string
+	mem := s.rooms[c.room.name].members
+	for _, client := range mem {
+		memberList = append(memberList, client.nick)
+	}
+	c.msg(fmt.Sprintf("member in this chat room: %s\n", strings.Join(memberList, ",\n")))
 
+}
 func (s *server) msg(c *client, args []string) {
 	if c.nick == "anonymous" {
 		c.msg("your name is `anonymous` plz change you nick name. usage: /nick NICK_NAME  (•◡•) /")
@@ -126,7 +144,7 @@ func (s *server) quit(c *client) {
 }
 
 func (s *server) quitCurrentRoom(c *client) {
-	if c.room != nil {
+	if c.room != nil { //如果当前已经加入了房间，则可以退出当前房间
 		oldRoom := s.rooms[c.room.name]
 		delete(s.rooms[c.room.name].members, c.conn.RemoteAddr())
 		oldRoom.broadcast(c, fmt.Sprintf("%s has left the room", c.nick))

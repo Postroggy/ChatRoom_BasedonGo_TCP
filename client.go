@@ -55,6 +55,11 @@ func (c *client) readInput() {
 				id:     CmdQuit,
 				client: c,
 			}
+		case "/member":
+			c.commands <- command{
+				id:     CmdMember,
+				client: c,
+			}
 		default:
 			c.err(fmt.Errorf("try again,unknown command: %s", cmd))
 		}

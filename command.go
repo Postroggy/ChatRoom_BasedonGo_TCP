@@ -8,6 +8,7 @@ const (
 	CmdRooms
 	CmdMsg
 	CmdQuit
+	CmdMember
 )
 
 type command struct {

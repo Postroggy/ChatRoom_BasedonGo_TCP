@@ -1,22 +1,15 @@
 package main
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-)
+import "fmt"
 
 func main() {
 
-	var inputString *bufio.Reader
-	inputString = bufio.NewReader(os.Stdin)
-	for {
-		msg, _ := inputString.ReadString('\n')
-		result := (msg == "quit\n")
-		fmt.Println(result)
+	var mp12 map[string]int
+	mp12["A"] = 1
+	mp12["B"] = 2
+	mp12["C"] = 3
 
-		if result {
-			os.Exit(0)
-		}
+	for name,_ := range mp12 {
+		fmt.Println(name)
 	}
 }
