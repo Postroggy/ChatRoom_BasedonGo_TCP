@@ -5,6 +5,7 @@ tcp
 *.sh
 go.mod
 go.sum
+LICENSE
 ### Symfony template
 # Cache and logs (Symfony2)
 /app/cache/*
