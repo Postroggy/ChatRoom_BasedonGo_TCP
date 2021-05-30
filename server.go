@@ -95,8 +95,11 @@ func (s *server) listRooms(c *client) {
 	for name := range s.rooms {
 		rooms = append(rooms, name)
 	}
-
-	c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ",\n")))
+	if rooms != nil {
+		c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ",\n")))
+	} else {
+		c.msg(fmt.Sprintf("THERE IS NO ROOM AVAILABLE. CREATE YOUR ROOM, usage: /join yourroomid"))
+	}
 }
 func (s *server) listMember(c *client) {
 	if c.nick == "anonymous" {
@@ -112,7 +115,7 @@ func (s *server) listMember(c *client) {
 	for _, client := range mem {
 		memberList = append(memberList, client.nick)
 	}
-	c.msg(fmt.Sprintf("member in this chat room: %s\n", strings.Join(memberList, ",\n")))
+	c.msg(fmt.Sprintf("member in this chat room:\n%s", strings.Join(memberList, ",\n")))
 
 }
 func (s *server) msg(c *client, args []string) {
@@ -120,6 +123,7 @@ func (s *server) msg(c *client, args []string) {
 		c.msg("your name is `anonymous` plz change you nick name. usage: /nick NICK_NAME  (•◡•) /")
 	}
 	if c.room == nil {
+		c.msg("you haven't join any of the rooms.")
 		s.listRooms(c)
 		c.msg("please choose one of these rooms, or create a room on your own. usage：/join ROOM_NAME （っ＾▿＾）")
 		return
@@ -137,7 +141,6 @@ func (s *server) quit(c *client) {
 	log.Printf("client has left the chat: %s", c.conn.RemoteAddr().String())
 
 	s.quitCurrentRoom(c)
-
 	c.msg("SEE YOU AGAIN ٩(˘◡˘)۶\n" +
 		"＊┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄＊")
 	c.conn.Close()
@@ -146,7 +149,8 @@ func (s *server) quit(c *client) {
 func (s *server) quitCurrentRoom(c *client) {
 	if c.room != nil { //如果当前已经加入了房间，则可以退出当前房间
 		oldRoom := s.rooms[c.room.name]
-		delete(s.rooms[c.room.name].members, c.conn.RemoteAddr())
+		delete(s.rooms[c.room.name].members, c.conn.RemoteAddr()) //删除用户
+		log.Printf("client has left: %s\n\t\t\"＊┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄┅┄＊", c.nick)
 		oldRoom.broadcast(c, fmt.Sprintf("%s has left the room", c.nick))
 	}
 }

@@ -29,12 +29,12 @@ func main() {
 		// 发送
 		inputString = bufio.NewReader(os.Stdin)
 		msg, err := inputString.ReadString('\n')
-		if msg == "/quit\n" {
-			os.Exit(0)
-		}
 		checkError(err)
 		_, err = conn.Write([]byte(msg))
 		checkError(err)
+		if msg == "/quit\n" {
+			os.Exit(0)
+		}
 	}
 	conn.Close()
 	os.Exit(0)
