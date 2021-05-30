@@ -1,0 +1,7 @@
+.DS_Store
+.idea
+tcp
+*.sh
+go.mod
+go.sum
+LICENSE
